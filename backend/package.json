@@ -1,0 +1,20 @@
+{
+  "name": "backend",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@ircam/sync": "^2.1.0",
+    "@types/express": "^5.0.5",
+    "@types/ws": "^8.18.1",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.3"
+  }
+}
