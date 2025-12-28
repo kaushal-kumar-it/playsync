@@ -6,7 +6,6 @@ import { SyncServer } from "@ircam/sync";
 const app = express();
 const server = http.createServer(app);
 
-// create ws server
 const wss = new WebSocketServer({ server });
 
 // create sync server
