@@ -27,3 +27,4 @@ frontend/
 test/
 test-server/
 _local_backup_*/
+main_backend/src/serviceAccount.json
