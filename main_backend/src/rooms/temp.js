@@ -1,0 +1,1 @@
+const r=console.log(r);

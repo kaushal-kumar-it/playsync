@@ -21,3 +21,9 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+# Keep these folders only locally (removed from GitHub)
+backend/
+frontend/
+test/
+test-server/
+_local_backup_*/
