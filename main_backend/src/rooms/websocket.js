@@ -209,6 +209,16 @@ export function setupRoomWebsocket(wss){
         
         socket.roomData = { code: roomCode, objectKey: room.objectKey };
 
+        try {
+            const messages = roomMessages.get(roomCode) || [];
+            socket.send(
+                JSON.stringify({
+                    type: 'messageHistory',
+                    messages,
+                })
+            );
+        } catch {}
+
         socket.on("error", (err) => {
             console.error(` WS ERROR connId=${connId} room=${roomCode} msg=${err?.message}`);
         });
@@ -222,6 +232,7 @@ export function setupRoomWebsocket(wss){
                     
                     const chatMessage = {
                         id: randomBytes(16).toString('hex'),
+                        clientId: message.clientId || null,
                         userId: message.userId,
                         userName: message.userName,
                         content: message.content,

@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 
 interface Message {
   id: string;
+  clientId?: string | null;
   userId: string;
   userName: string;
   content: string;
@@ -22,6 +23,7 @@ export function RightSidebar({ roomId, ws }: RightSidebarProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const seenClientIdsRef = useRef<Set<string>>(new Set());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -35,45 +37,99 @@ export function RightSidebar({ roomId, ws }: RightSidebarProps) {
     if (!ws) return;
 
     const handleMessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data);
-      
-      if (data.type === 'chat') {
-        setMessages(prev => [...prev, {
-          id: data.id,
-          userId: data.userId,
-          userName: data.userName,
-          content: data.content,
-          createdAt: data.createdAt
-        }]);
-      } else if (data.type === 'messageHistory') {
-        setMessages(data.messages);
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'chat') {
+          const clientId = typeof data.clientId === 'string' ? data.clientId : null;
+          if (clientId && seenClientIdsRef.current.has(clientId)) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.clientId === clientId
+                  ? {
+                      id: data.id,
+                      clientId,
+                      userId: data.userId,
+                      userName: data.userName,
+                      content: data.content,
+                      createdAt: data.createdAt,
+                    }
+                  : m
+              )
+            );
+            return;
+          }
+
+          if (clientId) seenClientIdsRef.current.add(clientId);
+
+          setMessages(prev => [...prev, {
+            id: data.id,
+            clientId,
+            userId: data.userId,
+            userName: data.userName,
+            content: data.content,
+            createdAt: data.createdAt
+          }]);
+        } else if (data.type === 'messageHistory') {
+          const history: Message[] = Array.isArray(data.messages) ? data.messages : [];
+          const nextSeen = new Set<string>();
+          for (const m of history) {
+            if (m?.clientId && typeof m.clientId === 'string') nextSeen.add(m.clientId);
+          }
+          seenClientIdsRef.current = nextSeen;
+          setMessages(history);
+        }
+      } catch {
+        // ignore
       }
+    };
+
+    const requestHistory = () => {
+      if (ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: 'getMessages' }));
     };
 
     ws.addEventListener('message', handleMessage);
 
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'getMessages' }));
-    }
+    ws.addEventListener('open', requestHistory);
+    requestHistory();
 
     return () => {
       ws.removeEventListener('message', handleMessage);
+      ws.removeEventListener('open', requestHistory);
     };
   }, [ws]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newMessage.trim() || !ws || ws.readyState !== WebSocket.OPEN) return;
+    const trimmed = newMessage.trim();
+    if (!trimmed || !ws || ws.readyState !== WebSocket.OPEN) return;
 
     const user = auth.currentUser;
     if (!user) return;
 
+    const clientId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    seenClientIdsRef.current.add(clientId);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `client_${clientId}`,
+        clientId,
+        userId: user.uid,
+        userName: user.displayName || 'Anonymous',
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+
     ws.send(JSON.stringify({
       type: 'chat',
+      clientId,
       userId: user.uid,
       userName: user.displayName || 'Anonymous',
-      content: newMessage.trim()
+      content: trimmed
     }));
 
     setNewMessage('');
@@ -147,7 +203,7 @@ export function RightSidebar({ roomId, ws }: RightSidebarProps) {
                       <div
                         className={`px-4 py-2 rounded-2xl ${
                           isCurrentUser
-                            ? 'bg-accent-gold text-black'
+                            ? 'bg-accent-gold text-white'
                             : 'glass border border-white/10 text-white'
                         }`}
                       >

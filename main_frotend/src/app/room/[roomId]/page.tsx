@@ -127,7 +127,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       </div>
 
       <div className="lg:hidden flex-1 flex flex-col overflow-hidden">
-        <MobileRoomTabs roomId={roomId} />
+        <MobileRoomTabs roomId={roomId} ws={ws} />
       </div>
 
       <PlayerControls />
