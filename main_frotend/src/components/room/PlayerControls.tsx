@@ -25,12 +25,9 @@ export function PlayerControls() {
       transition={{ delay: 0.25 }}
       className="h-20 sm:h-22 glass-dark border-t border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-8 relative z-30"
     >
-      {/* Left: Time */}
       <div className="hidden sm:flex w-1/4 items-center space-x-4">
         <span className="text-zinc-500 text-sm font-mono tabular-nums">00:00</span>
       </div>
-
-      {/* Center: Playback Controls */}
       <div className="flex-1 flex flex-col items-center max-w-2xl">
         <div className="flex items-center space-x-3 sm:space-x-6 mb-2 sm:mb-3">
           <motion.button
@@ -86,8 +83,6 @@ export function PlayerControls() {
             />
           </motion.button>
         </div>
-
-        {/* Progress Bar */}
         <div className="w-full flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
           <div
             className="flex-1 h-2 sm:h-1.5 bg-white/5 rounded-full overflow-hidden group-hover:h-2.5 sm:group-hover:h-2 transition-all"
@@ -111,8 +106,6 @@ export function PlayerControls() {
           </div>
         </div>
       </div>
-
-      {/* Right: Volume */}
       <div className="hidden sm:flex w-1/4 items-center justify-end space-x-3">
         <div className="flex items-center space-x-3 w-36 group">
           <motion.button

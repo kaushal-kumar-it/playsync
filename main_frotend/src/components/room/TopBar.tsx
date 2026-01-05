@@ -16,7 +16,6 @@ export function TopBar({ roomId }: { roomId: string }) {
       className="h-12 sm:h-14 glass-dark border-b border-white/5 flex items-center justify-between px-3 sm:px-6 select-none relative z-40"
     >
       <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-8">
-        {/* Logo */}
         <motion.div
           className="flex items-center space-x-1.5 sm:space-x-2.5 cursor-pointer"
           whileHover={{ scale: 1.02 }}
@@ -36,8 +35,6 @@ export function TopBar({ roomId }: { roomId: string }) {
             Beatsync
           </span>
         </motion.div>
-
-        {/* Stats */}
         <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 text-xs font-medium">
           <motion.div
             className="hidden sm:flex items-center space-x-2 text-accent-green"
@@ -66,8 +63,6 @@ export function TopBar({ roomId }: { roomId: string }) {
         </div>
 
         <div className="hidden lg:block h-4 w-px bg-white/10" />
-
-        {/* Network Stats */}
         <div className="hidden lg:flex items-center space-x-6 text-xs text-zinc-500 font-mono">
           <div className="flex items-center space-x-1.5">
             <span className="text-zinc-600">Offset:</span>
@@ -80,7 +75,6 @@ export function TopBar({ roomId }: { roomId: string }) {
         </div>
       </div>
 
-      {/* External Links */}
       <div className="flex items-center space-x-1 sm:space-x-2">
         <motion.button
           className="p-2 sm:p-2 text-zinc-500 hover:text-zinc-100 rounded-lg hover:bg-white/5 transition-colors touch-manipulation"

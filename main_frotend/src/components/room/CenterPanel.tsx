@@ -13,13 +13,10 @@ export function CenterPanel({ roomId }: { roomId: string }) {
       transition={{ delay: 0.2 }}
       className="flex-1 bg-gradient-to-b from-dark-900 to-dark-950 flex flex-col relative overflow-hidden"
     >
-      {/* Animated Background */}
       <div className="absolute inset-0 opacity-30 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-gold/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent-green/10 rounded-full blur-3xl" />
       </div>
-
-      {/* Search Header */}
       <div className="relative z-10 p-4 sm:p-6 lg:p-8">
         <motion.div
           initial={{ y: -10, opacity: 0 }}
@@ -54,8 +51,6 @@ export function CenterPanel({ roomId }: { roomId: string }) {
           <span>[Experimental Free Beta]</span>
         </motion.div>
       </div>
-
-      {/* Empty State with Visualizer */}
       <div className="relative flex-1 flex flex-col items-center justify-center -mt-16">
         <AudioVisualizer />
 
@@ -78,8 +73,6 @@ export function CenterPanel({ roomId }: { roomId: string }) {
           </div>
         </motion.div>
       </div>
-
-      {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-transparent to-transparent pointer-events-none" />
     </motion.main>
   );

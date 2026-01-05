@@ -52,7 +52,6 @@ export function RightSidebar({ roomId, ws }: RightSidebarProps) {
 
     ws.addEventListener('message', handleMessage);
 
-    // Request message history on mount
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'getMessages' }));
     }

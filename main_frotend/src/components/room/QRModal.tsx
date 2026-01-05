@@ -51,7 +51,6 @@ export function QRModal({ isOpen, onClose, roomId }: QRModalProps) {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -59,8 +58,6 @@ export function QRModal({ isOpen, onClose, roomId }: QRModalProps) {
             onClick={onClose}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100]"
           />
-
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -70,15 +67,12 @@ export function QRModal({ isOpen, onClose, roomId }: QRModalProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="glass-dark border border-white/10 rounded-2xl p-6 shadow-2xl">
-              {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-zinc-100">Join Room QR Code</h2>
                   <p className="text-sm text-zinc-500 mt-1">Scan to join Room {roomId}</p>
                 </div>
               </div>
-
-              {/* QR Code */}
               <div className="flex justify-center mb-6 relative">
                 <motion.button
                   onClick={onClose}
@@ -92,8 +86,6 @@ export function QRModal({ isOpen, onClose, roomId }: QRModalProps) {
                   <canvas ref={canvasRef} />
                 </div>
               </div>
-
-              {/* Room URL */}
               <div className="mb-6">
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 block">
                   Room URL
@@ -117,8 +109,6 @@ export function QRModal({ isOpen, onClose, roomId }: QRModalProps) {
                   </motion.button>
                 </div>
               </div>
-
-              {/* Download Button */}
               <motion.button
                 onClick={handleDownload}
                 className="w-full bg-gradient-to-br from-amber-500 to-amber-600 text-black font-semibold py-3 rounded-xl flex items-center justify-center space-x-2 shadow-lg hover:shadow-amber-500/20 transition-shadow"

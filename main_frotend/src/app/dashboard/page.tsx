@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [joinCode, setJoinCode] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -125,17 +126,14 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-zinc-100">
-      {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/3 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/3 rounded-full blur-3xl" />
       </div>
-
-      {/* Header */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="relative z-10 bg-[#0f0f0f] border-b border-white/5"
+        className="relative z-50 bg-[#0f0f0f] border-b border-white/5"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center justify-between">
@@ -151,17 +149,43 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-600 flex items-center justify-center text-black font-bold text-sm sm:text-base shadow-lg">
+            <div className="relative flex items-center space-x-2 sm:space-x-3">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-600 flex items-center justify-center text-black font-bold text-sm sm:text-base shadow-lg hover:scale-105 transition-transform"
+              >
                 {user?.displayName?.slice(0, 2).toUpperCase() || "CG"}
-              </div>
+              </button>
+
+              {showProfileMenu && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="absolute top-full right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                >
+                  <div className="p-3 border-b border-white/5">
+                    <p className="text-sm font-medium text-zinc-100 truncate">
+                      {user?.displayName || "User"}
+                    </p>
+                    <p className="text-xs text-zinc-500 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-2 px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
       </motion.header>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
-        {/* Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -192,15 +216,12 @@ export default function DashboardPage() {
             </motion.div>
           ))}
         </motion.div>
-
-        {/* Create/Join Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 lg:mb-12"
         >
-          {/* Create Room */}
           <motion.button
             onClick={createRoom}
             disabled={loading}
@@ -224,8 +245,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </motion.button>
-
-          {/* Join Room */}
           <motion.div
             className="relative group"
             whileHover={{ scale: 1.02, y: -4 }}
@@ -258,8 +277,6 @@ export default function DashboardPage() {
             </div>
           </motion.div>
         </motion.div>
-
-        {/* Rooms Section */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -313,11 +330,9 @@ export default function DashboardPage() {
                   className="group relative cursor-pointer"
                   onClick={() => joinRoom(room.code)}
                 >
-                  {/* Glow effect on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-emerald-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                   <div className="relative bg-[#1a1a1a] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/5 group-hover:border-amber-500/30 transition-all duration-300">
-                    {/* Header */}
                     <div className="flex items-start justify-between mb-3 sm:mb-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-1.5 sm:space-x-2 mb-1">
@@ -356,8 +371,6 @@ export default function DashboardPage() {
                         </motion.div>
                       )}
                     </div>
-
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-4">
                       <div className="flex items-center space-x-1.5 sm:space-x-2">
                         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 flex items-center justify-center">
@@ -397,8 +410,6 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Footer */}
                     <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-white/5">
                       <span className="text-xs text-zinc-600">
                         You own this room

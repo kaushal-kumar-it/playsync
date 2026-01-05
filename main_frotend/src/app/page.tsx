@@ -102,14 +102,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-black via-slate-900 to-indigo-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background ambient glow */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
-
-      {/* Main Card */}
       <div className="w-full max-w-md bg-slate-800/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative z-20">
         <div className="flex flex-col items-center text-center space-y-6">
-          {/* Header */}
           <div className="space-y-2">
             <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
               Beatsync
@@ -121,8 +117,6 @@ export default function LoginPage() {
               Ultra-precise synced music playback across devices.
             </p>
           </div>
-
-          {/* Login Button */}
           <div className="w-full pt-4">
             <button
               onClick={login}
@@ -151,13 +145,9 @@ export default function LoginPage() {
               <span>{loading ? "Signing in..." : "Continue with Google"}</span>
             </button>
           </div>
-
-          {/* Footer Text */}
           <p className="text-slate-500 text-sm font-medium">
             Sign in to continue
           </p>
-
-          {/* Error/Success Messages */}
           {error && (
             <p className="text-red-400 text-sm bg-red-900/20 p-3 rounded-lg w-full">
               {error}
@@ -170,8 +160,6 @@ export default function LoginPage() {
           )}
         </div>
       </div>
-
-      {/* Bottom Left Logo/Badge */}
       <div className="absolute bottom-6 left-6 z-10">
         <div className="w-10 h-10 rounded-full bg-black border border-white/10 flex items-center justify-center shadow-lg">
           <span className="text-amber-500 font-bold text-lg">B</span>

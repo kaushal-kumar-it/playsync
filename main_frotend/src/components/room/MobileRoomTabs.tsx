@@ -91,7 +91,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
 
   return (
     <div className="lg:hidden flex flex-col h-full bg-dark-900">
-      {/* Tab Navigation */}
       <div className="flex items-center border-b border-white/10 bg-dark-900/95 backdrop-blur-sm sticky top-0 z-20">
         <motion.button
           onClick={() => setActiveTab('session')}
@@ -147,8 +146,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
           )}
         </motion.button>
       </div>
-
-      {/* Tab Content */}
       <div className="flex-1 overflow-hidden relative">
         <AnimatePresence mode="wait">
           <motion.div
@@ -165,7 +162,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
           >
             {activeTab === 'session' && (
               <div className="p-4 space-y-6">
-                {/* Room Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-zinc-600 text-lg">#</span>
@@ -181,8 +177,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
                     <span>QR</span>
                   </motion.button>
                 </div>
-
-                {/* Playback Permissions */}
                 <div>
                   <div className="flex items-center space-x-2 text-xs font-bold text-zinc-500 mb-3 tracking-wider uppercase">
                     <span>Playback Permissions</span>
@@ -222,8 +216,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
                     </div>
                   </div>
                 </div>
-
-                {/* Global Volume */}
                 <div>
                   <div className="flex items-center justify-between text-xs font-bold text-zinc-500 mb-3 tracking-wider uppercase">
                     <div className="flex items-center space-x-2">
@@ -252,8 +244,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
                     </div>
                   </div>
                 </div>
-
-                {/* Connected Users */}
                 <div>
                   <div className="flex items-center justify-between text-xs font-bold text-zinc-500 mb-3 tracking-wider uppercase">
                     <div className="flex items-center space-x-2">
@@ -295,8 +285,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
                     </div>
                   </motion.div>
                 </div>
-
-                {/* Tips */}
                 <div>
                   <h3 className="text-xs font-bold text-zinc-500 mb-3 uppercase tracking-wider">
                     Tips
@@ -313,7 +301,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
 
             {activeTab === 'music' && (
               <div className="p-4 space-y-6">
-                {/* Upload Section */}
                 <motion.label
                   htmlFor="audio-upload-mobile"
                   className="w-full glass rounded-xl p-4 flex items-center space-x-3 group border border-white/10 hover:border-accent-gold/50 transition-all cursor-pointer"
@@ -351,8 +338,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
                     />
                   </div>
                 )}
-
-                {/* Queue */}
                 <div>
                   <h3 className="text-xs font-bold text-zinc-500 mb-3 uppercase tracking-wider">
                     Queue
@@ -372,7 +357,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
 
             {activeTab === 'chat' && (
               <div className="flex flex-col h-full">
-                {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-4">
                   <div className="flex flex-col items-center justify-center h-full text-center">
                     <div className="w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center mb-4">
@@ -386,8 +370,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
                     </p>
                   </div>
                 </div>
-
-                {/* Message Input */}
                 <div className="p-4 border-t border-white/5 bg-dark-900/95 backdrop-blur-sm">
                   <div className="relative group">
                     <input
@@ -411,8 +393,6 @@ export function MobileRoomTabs({ roomId }: MobileRoomTabsProps) {
           </motion.div>
         </AnimatePresence>
       </div>
-
-      {/* QR Modal */}
       <QRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} roomId={roomId} />
     </div>
   );

@@ -16,8 +16,6 @@ export function LeftSidebar({ roomId }: { roomId: string }) {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate file
     if (!file.type.startsWith('audio/')) {
       alert('Please select an audio file');
       return;
@@ -36,15 +34,11 @@ export function LeftSidebar({ roomId }: { roomId: string }) {
       if (!user) return;
 
       const token = await user.getIdToken();
-
-      // Get upload URL
       const { data } = await axios.post(
         `http://localhost:4000/rooms/${roomId}/generate-upload`,
         { filename: file.name },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // Upload to OCI
       await axios.put(data.uploadUrl, file, {
         headers: { 'Content-Type': file.type },
         onUploadProgress: (progressEvent) => {
