@@ -1,7 +1,7 @@
 import express from 'express';
 import { verifyToken } from '../auth/firebaseVerify.js';
 import { prisma } from '../db/prisma.js';
-import { generateUploadUrl, generateDeleteUrl } from '../oci/client.js';
+import { generateUploadUrl } from '../oci/client.js';
 
 const router = express.Router();
 

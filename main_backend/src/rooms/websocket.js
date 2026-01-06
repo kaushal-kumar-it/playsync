@@ -9,7 +9,7 @@ const roomMessages = new Map();
 
 const HEARTBEAT_INTERVAL_MS = 30000;
 const ROOM_EMPTY_GRACE_MS = Number.parseInt(
-    process.env.ROOM_EMPTY_GRACE_MS || '10000',
+    process.env.ROOM_EMPTY_GRACE_MS || '30000',
     10
 );
 

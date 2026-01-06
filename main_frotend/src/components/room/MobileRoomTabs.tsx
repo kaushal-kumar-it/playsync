@@ -130,15 +130,12 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('audio/')) {
-      alert('Please select an audio file');
-      return;
-    }
+    if (!file.type.startsWith('audio/')) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be less than 10MB');
-      return;
-    }
+    if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) return;
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -165,11 +162,9 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
         },
       });
 
-      alert('Upload successful!');
       setUploadProgress(0);
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -474,7 +469,7 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
                   <input
                     id="audio-upload-mobile"
                     type="file"
-                    accept="audio/*"
+                    accept="audio/mp3,audio/mpeg,.mp3"
                     className="hidden"
                     onChange={handleFileUpload}
                     disabled={isUploading}

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, Sparkles } from 'lucide-react';
+import { Search, Sparkles, Music } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 
 export function CenterPanel({ roomId }: { roomId: string }) {
@@ -66,7 +66,7 @@ export function CenterPanel({ roomId }: { roomId: string }) {
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <div className="text-4xl">🎵</div>
+              <Music className="w-10 h-10 text-zinc-600" />
             </motion.div>
             <h2 className="text-zinc-400 text-xl font-medium">No tracks yet</h2>
             <p className="text-zinc-600 text-sm">Upload music to start the session</p>

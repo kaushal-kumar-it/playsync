@@ -18,6 +18,8 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "firebase-admin": "^13.6.0",
+    "oci-objectstorage": "^2.98.0",
+    "oci-common": "^2.98.0",
     "prisma": "^7.2.0",
     "ws": "^8.18.3"
   }
