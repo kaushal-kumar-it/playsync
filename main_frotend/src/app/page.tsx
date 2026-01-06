@@ -23,7 +23,6 @@ export default function LoginPage() {
     return () => unsubscribe();
   }, []);
 
-  // Separate effect to handle redirect
   useEffect(() => {
     if (user && !checkingAuth) {
       console.log("Redirecting to dashboard with router.push");
@@ -52,7 +51,6 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       console.log("Popup successful, user:", result.user.email);
       
-      // Optional: sync with backend (skip if backend is down)
       try {
         const token = await result.user.getIdToken();
         console.log("Got token, sending to backend...");
@@ -68,7 +66,6 @@ export default function LoginPage() {
 
       console.log("Logged in:", result.user.email);
       
-      // Navigate using Next.js router
       router.push("/dashboard");
     } catch (err: any) {
       console.error("Login failed:", err.code, err.message, err);

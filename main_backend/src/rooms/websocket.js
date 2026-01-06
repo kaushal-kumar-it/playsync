@@ -203,6 +203,9 @@ export function setupRoomWebsocket(wss){
 
         dedupeUserInRoom(roomCode, socket.userId, connId);
 
+        socket.userName = decoded.name || decoded.email?.split('@')[0] || 'Anonymous';
+        socket.userEmail = decoded.email || '';
+
         activeRooms.get(roomCode).add(socket);
         const userCount = activeRooms.get(roomCode).size;
         console.log(` WS JOIN connId=${connId} room=${roomCode} user=${socket.userId} users=${userCount} conns=${JSON.stringify(roomSnapshot(roomCode))}`);
@@ -218,6 +221,34 @@ export function setupRoomWebsocket(wss){
                 })
             );
         } catch {}
+
+        const getUsersList = (roomCode) => {
+            const connections = activeRooms.get(roomCode);
+            if (!connections) return [];
+            return Array.from(connections).map(s => ({
+                userId: s.userId,
+                userName: s.userName || 'Anonymous',
+                userEmail: s.userEmail || '',
+                isAdmin: s.userId === room.ownerId
+            }));
+        };
+
+        const users = getUsersList(roomCode);
+        const roomConnections = activeRooms.get(roomCode);
+        if (roomConnections) {
+            const userJoinedPayload = JSON.stringify({
+                type: 'userJoined',
+                userId: socket.userId,
+                userName: socket.userName,
+                userEmail: socket.userEmail,
+                users
+            });
+            roomConnections.forEach(client => {
+                if (client.readyState === 1) {
+                    client.send(userJoinedPayload);
+                }
+            });
+        }
 
         socket.on("error", (err) => {
             console.error(` WS ERROR connId=${connId} room=${roomCode} msg=${err?.message}`);
@@ -267,6 +298,21 @@ export function setupRoomWebsocket(wss){
                         messages: messages
                     }));
                 }
+
+                if (message.type === 'getUsers') {
+                    const connections = activeRooms.get(roomCode);
+                    if (!connections) return;
+                    const users = Array.from(connections).map(s => ({
+                        userId: s.userId,
+                        userName: s.userName || 'Anonymous',
+                        userEmail: s.userEmail || '',
+                        isAdmin: s.userId === room.ownerId
+                    }));
+                    socket.send(JSON.stringify({
+                        type: 'usersList',
+                        users
+                    }));
+                }
             } catch (error) {
                 console.error(` WS MSG ERROR connId=${connId} room=${roomCode} msg=${error.message}`);
             }
@@ -278,6 +324,27 @@ export function setupRoomWebsocket(wss){
 
             const remainingUsers = removeSocketFromRoom(roomCode, socket);
             console.log(` WS LEAVE connId=${connId} room=${roomCode} user=${socket.userId} users=${remainingUsers} conns=${JSON.stringify(roomSnapshot(roomCode))}`);
+
+            const roomConnections = activeRooms.get(roomCode);
+            if (roomConnections && roomConnections.size > 0) {
+                const connections = activeRooms.get(roomCode);
+                const users = Array.from(connections).map(s => ({
+                    userId: s.userId,
+                    userName: s.userName || 'Anonymous',
+                    userEmail: s.userEmail || '',
+                    isAdmin: s.userId === room.ownerId
+                }));
+                const userLeftPayload = JSON.stringify({
+                    type: 'userLeft',
+                    userId: socket.userId,
+                    users
+                });
+                roomConnections.forEach(client => {
+                    if (client.readyState === 1) {
+                        client.send(userLeftPayload);
+                    }
+                });
+            }
 
             if (remainingUsers === 0) {
                 cleanupRoomIfEmpty(roomCode, socket);

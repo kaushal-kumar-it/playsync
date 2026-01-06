@@ -1,17 +1,62 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { QrCode, Users, Crown, ChevronRight, Plus, Upload } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import axios from 'axios';
 import { QRModal } from './QRModal';
 
-export function LeftSidebar({ roomId }: { roomId: string }) {
+interface ConnectedUser {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  isAdmin: boolean;
+}
+
+interface LeftSidebarProps {
+  roomId: string;
+  ws?: WebSocket | null;
+}
+
+export function LeftSidebar({ roomId, ws }: LeftSidebarProps) {
   const [activePermission, setActivePermission] = useState<'everyone' | 'admins'>('admins');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
+
+  useEffect(() => {
+    if (!ws) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'userJoined' || data.type === 'userLeft' || data.type === 'usersList') {
+          if (data.users && Array.isArray(data.users)) {
+            setConnectedUsers(data.users);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    const requestUsers = () => {
+      if (ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: 'getUsers' }));
+    };
+
+    ws.addEventListener('message', handleMessage);
+    ws.addEventListener('open', requestUsers);
+    requestUsers();
+
+    return () => {
+      ws.removeEventListener('message', handleMessage);
+      ws.removeEventListener('open', requestUsers);
+    };
+  }, [ws]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,7 +111,6 @@ export function LeftSidebar({ roomId }: { roomId: string }) {
       transition={{ delay: 0.1 }}
       className="hidden lg:flex w-80 glass-dark border-r border-white/5 flex-col overflow-hidden"
     >
-      {/* Room Header */}
       <div className="p-5 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
           <span className="text-zinc-600 text-lg">#</span>
@@ -83,7 +127,6 @@ export function LeftSidebar({ roomId }: { roomId: string }) {
         </motion.button>
       </div>
 
-      {/* Permissions */}
       <div className="p-5">
         <div className="flex items-center space-x-2 text-[10px] font-bold text-zinc-600 mb-3 tracking-widest uppercase">
           <ChevronRight className="w-3 h-3" />
@@ -125,7 +168,6 @@ export function LeftSidebar({ roomId }: { roomId: string }) {
         </div>
       </div>
 
-      {/* Connected Users */}
       <div className="flex-1 overflow-y-auto min-h-0 mb-2 no-scrollbar">
         <div className="px-5 py-3 flex items-center justify-between text-[10px] font-bold text-zinc-600 tracking-widest uppercase">
           <div className="flex items-center space-x-2">
@@ -134,52 +176,66 @@ export function LeftSidebar({ roomId }: { roomId: string }) {
           </div>
           <div className="flex items-center space-x-2">
             <span className="bg-white/5 text-zinc-400 px-2 py-0.5 rounded-full text-[10px] font-semibold">
-              1
+              {connectedUsers.length}
             </span>
           </div>
         </div>
 
         <motion.div
-          className="px-3 mt-2 pb-4"
+          className="px-3 mt-2 pb-4 space-y-2"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <motion.div
-            className="glass rounded-xl p-3 border border-white/10"
-            whileHover={{ scale: 1.02, borderColor: 'rgba(251, 191, 36, 0.3)' }}
-            transition={{ type: 'spring', stiffness: 400 }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                    {auth.currentUser?.displayName?.slice(0, 2).toUpperCase() || 'U'}
+          {connectedUsers.map((user, index) => {
+            const isCurrentUser = user.userId === auth.currentUser?.uid;
+            return (
+              <motion.div
+                key={user.userId}
+                className="glass rounded-xl p-3 border border-white/10"
+                whileHover={{ scale: 1.02, borderColor: 'rgba(251, 191, 36, 0.3)' }}
+                transition={{ type: 'spring', stiffness: 400 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                        {user.userName?.slice(0, 2).toUpperCase() || 'U'}
+                      </div>
+                      {user.isAdmin && (
+                        <motion.div
+                          className="absolute -top-1 -right-1 bg-accent-gold rounded-full p-1 border-2 border-dark-900 shadow-lg"
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                          <Crown className="w-2.5 h-2.5 text-black" />
+                        </motion.div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-zinc-100">
+                        {user.userName || 'Anonymous'}
+                      </div>
+                      <div className="text-xs text-zinc-500">
+                        {user.isAdmin ? 'Admin' : 'Member'}
+                      </div>
+                    </div>
                   </div>
-                  <motion.div
-                    className="absolute -top-1 -right-1 bg-accent-gold rounded-full p-1 border-2 border-dark-900 shadow-lg"
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <Crown className="w-2.5 h-2.5 text-black" />
-                  </motion.div>
+                  {isCurrentUser && (
+                    <div className="bg-accent-green/20 text-accent-green text-xs font-bold px-2.5 py-1 rounded-full border border-accent-green/30">
+                      You
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <div className="text-sm font-semibold text-zinc-100">
-                    {auth.currentUser?.displayName || 'Anonymous'}
-                  </div>
-                  <div className="text-xs text-zinc-500">Admin</div>
-                </div>
-              </div>
-              <div className="bg-accent-green/20 text-accent-green text-xs font-bold px-2.5 py-1 rounded-full border border-accent-green/30">
-                You
-              </div>
-            </div>
-          </motion.div>
+              </motion.div>
+            );
+          })}
         </motion.div>
       </div>
 
-      {/* Tips & Upload */}
       <div className="flex-shrink-0 p-4 border-t border-white/10 space-y-2 bg-black/20">
         <div>
           <h3 className="text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wider">
@@ -237,7 +293,6 @@ export function LeftSidebar({ roomId }: { roomId: string }) {
         )}
       </div>
 
-      {/* QR Modal */}
       <QRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} roomId={roomId} />
     </motion.aside>
   );

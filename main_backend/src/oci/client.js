@@ -20,7 +20,7 @@ export async function generateDeleteUrl(objectName) {
   return {
     deleteUrl: deleteUrl,
     objectName: objectName,
-    expiresAt: null, // PDA URLs don't expire
+    expiresAt: null,
   };
 }
 

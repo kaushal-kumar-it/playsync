@@ -12,5 +12,5 @@ const wss = new WebSocketServer({ server });
 setupRoomWebsocket(wss);
 
 server.listen(PORT, () => {
-    console.log(`server is running on ${PORT} thankyou`);
+    console.log(`Server running on port ${PORT}`);
 });

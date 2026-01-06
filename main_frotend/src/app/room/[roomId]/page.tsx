@@ -69,8 +69,6 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       }
 
       connectingRef.current = true;
-      
-      console.log(`🔌 Attempting to connect to room ${roomId}...`);
 
       const token = await authUser.getIdToken();
       const websocket = new WebSocket(
@@ -79,19 +77,16 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       wsRef.current = websocket;
 
       websocket.onopen = () => {
-        console.log(`✅ Connected to room ${roomId}`);
         setIsConnected(true);
         setWs(websocket);
       };
 
-      websocket.onerror = (error) => {
-        console.error('❌ WebSocket error:', error);
+      websocket.onerror = () => {
         setIsConnected(false);
         connectingRef.current = false;
       };
 
       websocket.onclose = () => {
-        console.log(`👋 Disconnected from room ${roomId}`);
         setIsConnected(false);
         setWs(null);
         connectingRef.current = false;
@@ -107,7 +102,6 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
           current.readyState === WebSocket.CONNECTING)
       ) {
         pendingWsClose = waitForWsClose(current);
-        console.log(`🔌 Closing WebSocket connection for room ${roomId}`);
         current.close();
       }
       wsRef.current = null;
@@ -121,7 +115,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       <TopBar roomId={roomId} />
 
       <div className="hidden lg:flex flex-1 overflow-hidden">
-        <LeftSidebar roomId={roomId} />
+        <LeftSidebar roomId={roomId} ws={ws} />
         <CenterPanel roomId={roomId} />
         <RightSidebar roomId={roomId} ws={ws} />
       </div>

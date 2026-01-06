@@ -23,6 +23,13 @@ interface Message {
   createdAt: string;
 }
 
+interface ConnectedUser {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  isAdmin: boolean;
+}
+
 export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('session');
   const [activePermission, setActivePermission] = useState<'everyone' | 'admins'>('admins');
@@ -32,6 +39,7 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
   const [message, setMessage] = useState('');
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const seenClientIdsRef = useRef<Set<string>>(new Set());
 
@@ -92,6 +100,10 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
           }
           seenClientIdsRef.current = nextSeen;
           setMessages(history);
+        } else if (data.type === 'userJoined' || data.type === 'userLeft' || data.type === 'usersList') {
+          if (data.users && Array.isArray(data.users)) {
+            setConnectedUsers(data.users);
+          }
         }
       } catch {
         // ignore
@@ -101,6 +113,7 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
     const requestHistory = () => {
       if (ws.readyState !== WebSocket.OPEN) return;
       ws.send(JSON.stringify({ type: 'getMessages' }));
+      ws.send(JSON.stringify({ type: 'getUsers' }));
     };
 
     ws.addEventListener('message', handleMessage);
@@ -169,11 +182,9 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
 
     if (Math.abs(velocity) > 500 || Math.abs(offset) > threshold) {
       if (offset > 0 || velocity > 0) {
-        // Swipe right
         if (activeTab === 'chat') setActiveTab('music');
         else if (activeTab === 'music') setActiveTab('session');
       } else {
-        // Swipe left
         if (activeTab === 'session') setActiveTab('music');
         else if (activeTab === 'music') setActiveTab('chat');
       }
@@ -379,38 +390,53 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="bg-white/5 text-zinc-400 px-2 py-0.5 rounded-full text-xs font-semibold">
-                        1
+                        {connectedUsers.length}
                       </span>
                     </div>
                   </div>
 
-                  <motion.div
-                    className="glass rounded-xl p-3 border border-white/10"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                            {auth.currentUser?.displayName?.slice(0, 2).toUpperCase() || 'U'}
+                  <div className="space-y-2">
+                    {connectedUsers.map((user) => {
+                      const isCurrentUser = user.userId === auth.currentUser?.uid;
+                      return (
+                        <motion.div
+                          key={user.userId}
+                          className="glass rounded-xl p-3 border border-white/10"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="relative">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                  {user.userName?.slice(0, 2).toUpperCase() || 'U'}
+                                </div>
+                                {user.isAdmin && (
+                                  <div className="absolute -top-1 -right-1 bg-accent-gold rounded-full p-1 border-2 border-dark-900 shadow-lg">
+                                    <Crown className="w-2.5 h-2.5 text-black" />
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold text-zinc-100">
+                                  {user.userName || 'Anonymous'}
+                                </div>
+                                <div className="text-xs text-zinc-500">
+                                  {user.isAdmin ? 'Admin' : 'Member'}
+                                </div>
+                              </div>
+                            </div>
+                            {isCurrentUser && (
+                              <div className="bg-emerald-500/20 text-emerald-500 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-500/30">
+                                You
+                              </div>
+                            )}
                           </div>
-                          <div className="absolute -top-1 -right-1 bg-accent-gold rounded-full p-1 border-2 border-dark-900 shadow-lg">
-                            <Crown className="w-2.5 h-2.5 text-black" />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-zinc-100">
-                            {auth.currentUser?.displayName || 'Anonymous'}
-                          </div>
-                          <div className="text-xs text-zinc-500">Admin</div>
-                        </div>
-                      </div>
-                      <div className="bg-emerald-500/20 text-emerald-500 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-500/30">
-                        You
-                      </div>
-                    </div>
-                  </motion.div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-zinc-500 mb-3 uppercase tracking-wider">

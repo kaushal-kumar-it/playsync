@@ -31,7 +31,6 @@ router.post("/create", verifyToken, async (req, res) => {
             }
         });
 
-        console.log(` Room created: ${room.code} by ${req.user.uid}`);
         res.json({ roomId: room.code });
     } catch (error) {
         console.error(" Room creation error:", error);
@@ -46,7 +45,6 @@ router.get("/my-rooms", verifyToken, async (req, res) => {
             orderBy: { createdAt: 'desc' }
         });
 
-        console.log(`📋 User ${req.user.uid} has ${rooms.length} rooms:`, rooms.map(r => r.code));
         res.json({ rooms });
     } catch (error) {
         console.error(" Fetch rooms error:", error);
@@ -58,10 +56,6 @@ router.get("/debug/all", verifyToken, async (req, res) => {
     try {
         const allRooms = await prisma.room.findMany({
             orderBy: { createdAt: 'desc' }
-        });
-        console.log(`🔍 Total rooms in database: ${allRooms.length}`);
-        allRooms.forEach(room => {
-            console.log(`   - Room ${room.code} (owner: ${room.ownerId}, objectKey: ${room.objectKey || 'none'})`);
         });
         res.json({ total: allRooms.length, rooms: allRooms });
     } catch (error) {
@@ -105,8 +99,6 @@ router.post("/:roomId/generate-upload", verifyToken, async (req, res) => {
             where: { code: roomId },
             data: { objectKey: result.objectName }
         });
-
-        console.log(` Upload URL generated for room ${roomId}`);
 
         res.json({
             success: true,
