@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import {
   Play,
@@ -13,10 +13,47 @@ import {
   VolumeX,
 } from 'lucide-react';
 
-export function PlayerControls() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(75);
-  const [progress, setProgress] = useState(0);
+function formatTime(seconds: number) {
+  const safe = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  const m = Math.floor(safe / 60);
+  const s = Math.floor(safe % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+export function PlayerControls({
+  hasTrack,
+  trackName,
+  isPlaying,
+  volume,
+  progress,
+  currentTime,
+  duration,
+  onTogglePlay,
+  onSeek,
+  onSkipBack,
+  onSkipForward,
+  onToggleMute,
+  onSetVolume,
+}: {
+  hasTrack: boolean;
+  trackName: string | null;
+  isPlaying: boolean;
+  volume: number;
+  progress: number;
+  currentTime: number;
+  duration: number;
+  onTogglePlay: () => void;
+  onSeek: (percentage: number) => void;
+  onSkipBack: () => void;
+  onSkipForward: () => void;
+  onToggleMute: () => void;
+  onSetVolume: (percentage: number) => void;
+}) {
+  const percentFromClientX = (clientX: number, rect: DOMRect) => {
+    if (rect.width <= 0) return 0;
+    const x = clientX - rect.left;
+    return Math.min(100, Math.max(0, (x / rect.width) * 100));
+  };
 
   return (
     <motion.footer
@@ -26,9 +63,26 @@ export function PlayerControls() {
       className="h-20 sm:h-22 glass-dark border-t border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-8 relative z-30"
     >
       <div className="hidden sm:flex w-1/4 items-center space-x-4">
-        <span className="text-zinc-500 text-sm font-mono tabular-nums">00:00</span>
+        <div className="min-w-0">
+          <div className="text-zinc-300 text-sm font-medium truncate">
+            {trackName || (hasTrack ? 'Track' : 'No track')}
+          </div>
+          <div className="text-zinc-500 text-sm font-mono tabular-nums">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+        </div>
       </div>
+
       <div className="flex-1 flex flex-col items-center max-w-2xl">
+        <div className="sm:hidden w-full text-center mb-2 px-2">
+          <div className="text-zinc-300 text-xs font-medium truncate">
+            {trackName || (hasTrack ? 'Track' : 'No track')}
+          </div>
+          <div className="text-zinc-500 text-xs font-mono tabular-nums">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+        </div>
+
         <div className="flex items-center space-x-3 sm:space-x-6 mb-2 sm:mb-3">
           <motion.button
             className="hidden sm:block text-zinc-500 hover:text-zinc-100 transition-colors"
@@ -40,6 +94,7 @@ export function PlayerControls() {
 
           <motion.button
             className="text-zinc-400 hover:text-zinc-100 transition-colors p-2 sm:p-0"
+            onClick={onSkipBack}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -48,7 +103,8 @@ export function PlayerControls() {
 
           <motion.button
             className="relative group"
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={onTogglePlay}
+            disabled={!hasTrack}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -64,6 +120,7 @@ export function PlayerControls() {
 
           <motion.button
             className="text-zinc-400 hover:text-zinc-100 transition-colors p-2 sm:p-0"
+            onClick={onSkipForward}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -83,14 +140,14 @@ export function PlayerControls() {
             />
           </motion.button>
         </div>
+
         <div className="w-full flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
           <div
             className="flex-1 h-2 sm:h-1.5 bg-white/5 rounded-full overflow-hidden group-hover:h-2.5 sm:group-hover:h-2 transition-all"
-            onClick={(e) => {
+            onPointerDown={(e) => {
+              if (!hasTrack || duration <= 0) return;
               const rect = e.currentTarget.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const percentage = (x / rect.width) * 100;
-              setProgress(percentage);
+              onSeek(percentFromClientX(e.clientX, rect));
             }}
           >
             <motion.div
@@ -106,10 +163,11 @@ export function PlayerControls() {
           </div>
         </div>
       </div>
+
       <div className="hidden sm:flex w-1/4 items-center justify-end space-x-3">
         <div className="flex items-center space-x-3 w-36 group">
           <motion.button
-            onClick={() => setVolume(volume > 0 ? 0 : 75)}
+            onClick={onToggleMute}
             className="p-1"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -123,11 +181,9 @@ export function PlayerControls() {
 
           <div
             className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden cursor-pointer group-hover:h-2 transition-all"
-            onClick={(e) => {
+            onPointerDown={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const percentage = (x / rect.width) * 100;
-              setVolume(percentage);
+              onSetVolume(percentFromClientX(e.clientX, rect));
             }}
           >
             <motion.div

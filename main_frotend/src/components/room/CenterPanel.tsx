@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Search, Sparkles, Music } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 
-export function CenterPanel({ roomId }: { roomId: string }) {
+export function CenterPanel({ roomId, hasTrack }: { roomId: string; hasTrack: boolean }) {
   return (
     <motion.main
       initial={{ opacity: 0 }}
@@ -68,8 +68,17 @@ export function CenterPanel({ roomId }: { roomId: string }) {
             >
               <Music className="w-10 h-10 text-zinc-600" />
             </motion.div>
-            <h2 className="text-zinc-400 text-xl font-medium">No tracks yet</h2>
-            <p className="text-zinc-600 text-sm">Upload music to start the session</p>
+            {hasTrack ? (
+              <>
+                <h2 className="text-zinc-400 text-xl font-medium">Track ready</h2>
+                <p className="text-zinc-600 text-sm">Use the controls to play</p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-zinc-400 text-xl font-medium">No tracks yet</h2>
+                <p className="text-zinc-600 text-sm">Upload music to start the session</p>
+              </>
+            )}
           </div>
         </motion.div>
       </div>

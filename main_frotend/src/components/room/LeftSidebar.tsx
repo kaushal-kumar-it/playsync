@@ -17,9 +17,10 @@ interface ConnectedUser {
 interface LeftSidebarProps {
   roomId: string;
   ws?: WebSocket | null;
+  onUploadComplete?: () => void;
 }
 
-export function LeftSidebar({ roomId, ws }: LeftSidebarProps) {
+export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) {
   const [activePermission, setActivePermission] = useState<'everyone' | 'admins'>('admins');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -91,6 +92,12 @@ export function LeftSidebar({ roomId, ws }: LeftSidebarProps) {
           setUploadProgress(progress);
         },
       });
+
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'trackUpdated' }));
+      }
+
+      onUploadComplete?.();
 
       setUploadProgress(0);
     } catch (error) {

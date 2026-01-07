@@ -10,6 +10,7 @@ import { QRModal } from './QRModal';
 interface MobileRoomTabsProps {
   roomId: string;
   ws: WebSocket | null;
+  onUploadComplete?: () => void;
 }
 
 type TabType = 'session' | 'music' | 'chat';
@@ -30,7 +31,7 @@ interface ConnectedUser {
   isAdmin: boolean;
 }
 
-export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
+export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('session');
   const [activePermission, setActivePermission] = useState<'everyone' | 'admins'>('admins');
   const [volume, setVolume] = useState(100);
@@ -161,6 +162,12 @@ export function MobileRoomTabs({ roomId, ws }: MobileRoomTabsProps) {
           setUploadProgress(progress);
         },
       });
+
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'trackUpdated' }));
+      }
+
+      onUploadComplete?.();
 
       setUploadProgress(0);
     } catch (error) {
