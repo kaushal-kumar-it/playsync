@@ -1,9 +1,16 @@
 import express from 'express';
 import { verifyToken } from '../auth/firebaseVerify.js';
 import { prisma } from '../db/prisma.js';
-import { generateUploadUrl } from '../oci/client.js';
-
+import { deleteFromOCI, generateReadUrl, generateUploadUrl } from '../oci/client.js';
+import { saveUserIfNotExists } from '../auth/saveUser.js';
 const router = express.Router();
+
+function sanitizeFilename(input) {
+    const raw = typeof input === 'string' ? input : '';
+    const base = raw.split(/[\\/]/).pop() || 'track.mp3';
+    const cleaned = base.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 120) || 'track.mp3';
+    return cleaned.toLowerCase().endsWith('.mp3') ? cleaned : `${cleaned}.mp3`;
+}
 
 function generateRoomCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -11,6 +18,8 @@ function generateRoomCode() {
 
 router.post("/create", verifyToken, async (req, res) => {
     try {
+        await saveUserIfNotExists(req.user);
+
         let roomCode;
         let attempts = 0;
         
@@ -92,7 +101,17 @@ router.post("/:roomId/generate-upload", verifyToken, async (req, res) => {
             return res.status(404).json({ error: "Room not found" });
         }
 
-        const filename = `room-${roomId}-${Date.now()}.mp3`;
+        if (room.objectKey) {
+            try {
+                await deleteFromOCI(room.objectKey);
+                console.log(` Deleted old object: ${room.objectKey}`);
+            } catch (error) {
+                console.error(` Failed to delete old object: ${error.message}`);
+            }
+        }
+
+        const requestedName = sanitizeFilename(req.body?.filename);
+        const filename = `room-${roomId}-${Date.now()}_${requestedName}`;
         const result = await generateUploadUrl(filename);
 
         await prisma.room.update({
@@ -112,6 +131,35 @@ router.post("/:roomId/generate-upload", verifyToken, async (req, res) => {
     }
 });
 
+router.get("/:roomId/playback-url", verifyToken, async (req, res) => {
+    try {
+        const roomId = req.params.roomId;
+        const room = await prisma.room.findUnique({
+            where: { code: roomId },
+            select: { objectKey: true }
+        });
+
+        if (!room) {
+            return res.status(404).json({ error: "Room not found" });
+        }
+
+        if (!room.objectKey) {
+            return res.status(400).json({ error: "No track uploaded" });
+        }
+
+        const result = await generateReadUrl(room.objectKey);
+        res.json({
+            success: true,
+            playbackUrl: result.playbackUrl,
+            objectName: result.objectName,
+            expiresAt: result.expiresAt
+        });
+    } catch (error) {
+        console.error(" Playback URL generation error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post("/:roomId/generate-delete", verifyToken, async (req, res) => {
     try {
         const roomId = req.params.roomId;
@@ -127,14 +175,13 @@ router.post("/:roomId/generate-delete", verifyToken, async (req, res) => {
             return res.status(400).json({ error: "No object to delete" });
         }
 
-        const result = await generateDeleteUrl(room.objectKey);
-
-        res.json({
-            success: true,
-            deleteUrl: result.deleteUrl,
-            objectName: result.objectName,
-            expiresAt: result.expiresAt
+        await deleteFromOCI(room.objectKey);
+        await prisma.room.update({
+            where: { code: roomId },
+            data: { objectKey: null }
         });
+
+        res.json({ success: true });
     } catch (error) {
         console.error(" Delete URL generation error:", error);
         res.status(500).json({ error: error.message });

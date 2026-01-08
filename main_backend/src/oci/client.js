@@ -47,6 +47,30 @@ export async function generateUploadUrl(filename) {
   };
 }
 
+export async function generateReadUrl(objectKey) {
+  const createPreauthenticatedRequestDetails = {
+    name: `read-${objectKey}`,
+    objectName: objectKey,
+    accessType: os.models.CreatePreauthenticatedRequestDetails.AccessType.ObjectRead,
+    timeExpires: new Date(Date.now() + 3600000),
+  };
+
+  const request = {
+    namespaceName: namespace,
+    bucketName: bucket,
+    createPreauthenticatedRequestDetails,
+  };
+
+  const response = await objectStorageClient.createPreauthenticatedRequest(request);
+  const fullUrl = `https://objectstorage.${region}.oraclecloud.com${response.preauthenticatedRequest.accessUri}`;
+
+  return {
+    playbackUrl: fullUrl,
+    objectName: objectKey,
+    expiresAt: response.preauthenticatedRequest.timeExpires,
+  };
+}
+
 export async function deleteFromOCI(objectKey) {
   const deleteObjectRequest = {
     namespaceName: namespace,

@@ -67,7 +67,6 @@ function cleanupRoomIfEmpty(roomCode, lastSocket) {
 
     if (roomCleanupTimers.has(roomCode)) return;
 
-    const objectKey = lastSocket?.roomData?.objectKey || null;
     console.log(
         `\n Last user left room ${roomCode}. Scheduling cleanup in ${ROOM_EMPTY_GRACE_MS}ms...`
     );
@@ -85,6 +84,19 @@ function cleanupRoomIfEmpty(roomCode, lastSocket) {
 
         console.log(`\n Starting cleanup for room ${roomCode}...`);
 
+        let objectKey = null;
+        try {
+            const room = await prisma.room.findUnique({
+                where: { code: roomCode },
+                select: { objectKey: true },
+            });
+            objectKey = room?.objectKey || null;
+        } catch (error) {
+            console.error(
+                ` Failed to load room from database for cleanup: ${error.message}`
+            );
+        }
+
         if (objectKey) {
             console.log(` Room has objectKey: ${objectKey}`);
             try {
@@ -94,7 +106,18 @@ function cleanupRoomIfEmpty(roomCode, lastSocket) {
                 console.error(` Failed to delete object: ${error.message}`);
             }
         } else {
-            console.log(` Room has no objectKey, skipping OCI deletion`);
+            const fallbackKey = lastSocket?.roomData?.objectKey || null;
+            if (fallbackKey) {
+                console.log(` Room DB missing objectKey; using socket fallback: ${fallbackKey}`);
+                try {
+                    await deleteFromOCI(fallbackKey);
+                    console.log(` Deleted object: ${fallbackKey}`);
+                } catch (error) {
+                    console.error(` Failed to delete object: ${error.message}`);
+                }
+            } else {
+                console.log(` Room has no objectKey, skipping OCI deletion`);
+            }
         }
 
         try {
@@ -312,6 +335,18 @@ export function setupRoomWebsocket(wss){
                         type: 'usersList',
                         users
                     }));
+                }
+
+                if (message.type === 'trackUpdated') {
+                    const payload = JSON.stringify({ type: 'trackUpdated' });
+                    const roomConnections = activeRooms.get(roomCode);
+                    if (roomConnections) {
+                        roomConnections.forEach(client => {
+                            if (client.readyState === 1) {
+                                client.send(payload);
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.error(` WS MSG ERROR connId=${connId} room=${roomCode} msg=${error.message}`);
