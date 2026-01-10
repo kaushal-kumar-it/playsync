@@ -1,6 +1,10 @@
 export class SyncClient {
+  getTime: () => number;
+  offset: number;
+  frequencyRatio: number;
+  running: boolean;
   constructor(getTime: () => number) {
-    this.getTime= getTime;
+    this.getTime = getTime;
     this.offset = 0;
     this.frequencyRatio = 1;
     this.running = false;
