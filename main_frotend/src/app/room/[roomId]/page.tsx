@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import axios from 'axios';
+import { SyncClient } from '@/lib/syncClient';
 
 let pendingWsClose: Promise<void> | null = null;
 
@@ -49,6 +50,21 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   const [duration, setDuration] = useState(0);
   const [isShuffle, setIsShuffle] = useState(false);
   const [isRepeat, setIsRepeat] = useState(false);
+  const syncRef = useRef<any>(null);
+  const [globalTime, setGlobalTime] = useState<number>(0);
+
+  const [offset, setOffset] = useState<number>(0);
+  const [rtt, setRtt] = useState<number>(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOffset(globalTime);
+      if (syncRef.current) {
+        setRtt(Math.round((syncRef.current.lastRTT || 0) * 1000));
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [globalTime]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -233,22 +249,122 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     return () => ws.removeEventListener('message', handleMessage);
   }, [ws, refreshPlaybackUrl]);
 
+  // --- Time Sync Setup ---
+  useEffect(() => {
+    if (!ws) return;
+    const getTime = () => performance.now() / 1000;
+    const sync = new SyncClient(getTime);
+    syncRef.current = sync;
+    const sendFunction = (pingId: number, clientPingTime: number) => {
+      ws.send(JSON.stringify([0, pingId, clientPingTime]));
+    };
+    const receiveFunction = (callback: Function) => {
+      ws.addEventListener('message', (e: MessageEvent) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (Array.isArray(msg) && msg[0] === 1) {
+            callback(msg[1], msg[2], msg[3], msg[4]);
+          }
+        } catch {}
+      });
+    };
+    sync.start(sendFunction, receiveFunction, (status: any) => {
+      // Optionally update UI with sync status
+    });
+    return () => sync.stop();
+  }, [ws]);
+
+  // Global Time UI 
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const sync = syncRef.current;
+      if (sync && typeof sync.getSyncTime === 'function') {
+        setGlobalTime(sync.getSyncTime()%1e6);
+      } else {
+        setGlobalTime(performance.now() / 1000);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Scheduled Play/Pause 
+  useEffect(() => {
+    if (!ws) return;
+    const handler = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        const sync = syncRef.current;
+        const audio = audioRef.current;
+        if (!audio || !sync?.getSyncTime) return;
+        if (data.type === 'play') {
+          const now = sync.getSyncTime();
+          const delay = Math.max(0, (data.executeAt - now) * 1000);
+          if (typeof data.currentTime === 'number') {
+            audio.currentTime = data.currentTime;
+          }
+          setTimeout(() => {
+            audio.play().catch(() => setIsPlaying(false));
+          }, delay);
+        }
+        if (data.type === 'pause') {
+          const now = sync.getSyncTime();
+          const delay = Math.max(0, (data.executeAt - now) * 1000);
+          setTimeout(() => {
+            if (typeof data.currentTime === 'number') {
+              audio.currentTime = data.currentTime;
+            }
+            audio.pause();
+          }, delay);
+        }
+      } catch {}
+    };
+    ws.addEventListener('message', handler);
+    return () => ws.removeEventListener('message', handler);
+  }, [ws]);
+
+  //  Play/Pause Request (Sync)
+  const playSync = () => {
+    const socket = wsRef.current;
+    const sync = syncRef.current;
+    const audio = audioRef.current;
+    if (!socket || !sync || !audio) return;
+    const now = sync.getSyncTime();
+    const nextMark = Math.ceil(now / 2) * 2;
+    const executeAt = nextMark;
+    const currentTime = audio.currentTime || 0;
+    socket.send(JSON.stringify({ type: 'play', executeAt, currentTime }));
+  };
+  const pauseSync = () => {
+    const socket = wsRef.current;
+    const sync = syncRef.current;
+    const audio = audioRef.current;
+    if (!socket || !sync || !audio) return;
+    const now = sync.getSyncTime();
+    const nextMark = Math.ceil(now / 2) * 2;
+    const executeAt = nextMark;
+    const currentTime = audio.currentTime || 0;
+    socket.send(JSON.stringify({ type: 'pause', executeAt, currentTime }));
+  };
+
   const hasTrack = Boolean(audioUrl);
 
+  //  Play/Pause Request (Sync)
   const onTogglePlay = async () => {
+    const socket = wsRef.current;
+    const sync = syncRef.current;
     const audio = audioRef.current;
-    if (!audio || !audioUrl) return;
-
-    try {
-      if (audio.paused) {
-        await audio.play();
-        setIsPlaying(true);
-      } else {
-        audio.pause();
-        setIsPlaying(false);
-      }
-    } catch {
-      setIsPlaying(false);
+    if (!socket || !sync || !audio) return;
+    const now = sync.getSyncTime();
+    const nextMark = Math.ceil(now / 2) * 2;
+    const executeAt = nextMark;
+    const currentTime = audio.currentTime || 0;
+    if (audio.paused) {
+      socket.send(JSON.stringify({ type: 'play', executeAt, currentTime }));
+    } else {
+      socket.send(JSON.stringify({ type: 'pause', executeAt, currentTime }));
     }
   };
 
@@ -291,7 +407,7 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   
   return (
     <div className="h-screen w-full bg-black text-zinc-100 flex flex-col overflow-hidden font-sans">
-      <TopBar roomId={roomId} />
+      <TopBar roomId={roomId} offset={offset} rtt={rtt} />
 
       <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" className="hidden" />
 
@@ -309,6 +425,13 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
           volume={volume}
           setVolume={onSetVolume}
         />
+      </div>
+
+      <div className="flex flex-row gap-4 justify-center items-center my-4">
+        <span className="ml-4 text-xs text-zinc-400">Global Time: {Math.floor(globalTime)}s</span>
+        {syncRef.current && syncRef.current.lastRTT !== undefined && (
+          <span className="ml-4 text-xs text-zinc-400">RTT: {syncRef.current.lastRTT?.toFixed(4)}s</span>
+        )}
       </div>
 
       <PlayerControls

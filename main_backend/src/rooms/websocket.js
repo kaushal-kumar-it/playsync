@@ -280,10 +280,26 @@ export function setupRoomWebsocket(wss){
         socket.on("message", async (data) => {
             try {
                 const message = JSON.parse(data.toString());
-                
+
+                // --- SYNC PLAY/PAUSE ---
+                if (message.type === 'play' || message.type === 'pause') {
+                    const roomConnections = activeRooms.get(roomCode);
+                    if (roomConnections) {
+                        roomConnections.forEach(client => {
+                            if (client.readyState === 1) {
+                                client.send(JSON.stringify({
+                                    type: message.type,
+                                    executeAt: message.executeAt,
+                                    currentTime: message.currentTime
+                                }));
+                            }
+                        });
+                    }
+                    return;
+                }
+
                 if (message.type === 'chat') {
-                    console.log(` Chat message in room ${roomCode} from ${message.userName}: ${message.content}`);
-                    
+                    // ...existing code...
                     const chatMessage = {
                         id: randomBytes(16).toString('hex'),
                         clientId: message.clientId || null,
@@ -292,17 +308,14 @@ export function setupRoomWebsocket(wss){
                         content: message.content,
                         createdAt: new Date().toISOString()
                     };
-                    
                     if (!roomMessages.has(roomCode)) {
                         roomMessages.set(roomCode, []);
                     }
                     roomMessages.get(roomCode).push(chatMessage);
-                    
                     const broadcastData = JSON.stringify({
                         type: 'chat',
                         ...chatMessage
                     });
-                    
                     const roomConnections = activeRooms.get(roomCode);
                     if (roomConnections) {
                         roomConnections.forEach(client => {
@@ -312,10 +325,9 @@ export function setupRoomWebsocket(wss){
                         });
                     }
                 }
-                
+
                 if (message.type === 'getMessages') {
                     const messages = roomMessages.get(roomCode) || [];
-                    
                     socket.send(JSON.stringify({
                         type: 'messageHistory',
                         messages: messages

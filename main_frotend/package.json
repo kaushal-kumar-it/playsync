@@ -16,7 +16,8 @@
     "next": "16.1.1",
     "qrcode": "^1.5.3",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "@ircam/sync": "^2.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

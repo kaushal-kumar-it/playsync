@@ -21,6 +21,7 @@
     "oci-objectstorage": "^2.98.0",
     "oci-common": "^2.98.0",
     "prisma": "^7.2.0",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "@ircam/sync": "^2.1.0"
   }
 }

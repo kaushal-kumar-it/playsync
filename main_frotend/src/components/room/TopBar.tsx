@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Crown, Users, Github, MessageCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export function TopBar({ roomId }: { roomId: string }) {
+export function TopBar({ roomId, offset = 0, rtt = 0 }: { roomId: string, offset?: number, rtt?: number }) {
   const router = useRouter();
   const githubUrl = process.env.NEXT_PUBLIC_GITHUB_LINK;
 
@@ -66,11 +66,11 @@ export function TopBar({ roomId }: { roomId: string }) {
         <div className="hidden lg:flex items-center space-x-6 text-xs text-zinc-500 font-mono">
           <div className="flex items-center space-x-1.5">
             <span className="text-zinc-600">Offset:</span>
-            <span className="text-accent-green">0ms</span>
+            <span className="text-accent-green">{Math.floor(offset * 1000)}ms</span>
           </div>
           <div className="flex items-center space-x-1.5">
             <span className="text-zinc-600">RTT:</span>
-            <span className="text-accent-green">0ms</span>
+            <span className="text-accent-green">{(rtt * 1000).toFixed(0)}ms</span>
           </div>
         </div>
       </div>

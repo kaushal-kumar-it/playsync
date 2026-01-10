@@ -171,7 +171,7 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 mb-2 no-scrollbar">
+      <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar">
         <div className="px-5 py-3 flex items-center justify-between text-[10px] font-bold text-zinc-600 tracking-widest uppercase">
           <div className="flex items-center space-x-2">
             <Users className="w-3 h-3" />
@@ -239,23 +239,7 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
         </motion.div>
       </div>
 
-      <div className="flex-shrink-0 p-4 border-t border-white/10 space-y-2 bg-black/20">
-        <div>
-          <h3 className="text-xs font-bold text-zinc-500 mb-1 uppercase tracking-wider">
-            Tips
-          </h3>
-          <ul className="space-y-1">
-            <motion.li
-              className="flex items-start space-x-2.5 text-[11px] leading-snug text-zinc-400"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <span className="mt-1 w-1 h-1 rounded-full bg-accent-gold flex-shrink-0" />
-              <span>Play on speaker directly. Don't use Bluetooth for best sync.</span>
-            </motion.li>
-          </ul>
-        </div>
+      <div className="flex-shrink-0 p-3 border-t border-white/10 space-y-2 bg-black/20">
 
         <motion.label
           htmlFor="audio-upload"
