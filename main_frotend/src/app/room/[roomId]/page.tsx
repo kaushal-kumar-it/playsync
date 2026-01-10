@@ -47,6 +47,8 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -158,19 +160,31 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     };
 
     const onEnded = () => {
-      setIsPlaying(false);
+      if (isRepeat && audio.src) {
+        audio.currentTime = 0;
+        audio.play().catch(() => setIsPlaying(false));
+      } else {
+        setIsPlaying(false);
+      }
     };
+
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
 
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('loadedmetadata', onTimeUpdate);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('loadedmetadata', onTimeUpdate);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
     };
-  }, []);
+  }, [isRepeat]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -266,6 +280,14 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
   const onSetVolume = (percentage: number) => {
     setVolume(Math.min(100, Math.max(0, percentage)));
   };
+
+  const onToggleShuffle = () => {
+    setIsShuffle((prev) => !prev);
+  };
+
+  const onToggleRepeat = () => {
+    setIsRepeat((prev) => !prev);
+  };
   
   return (
     <div className="h-screen w-full bg-black text-zinc-100 flex flex-col overflow-hidden font-sans">
@@ -280,7 +302,13 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       </div>
 
       <div className="lg:hidden flex-1 flex flex-col overflow-hidden">
-        <MobileRoomTabs roomId={roomId} ws={ws} onUploadComplete={refreshPlaybackUrl} />
+        <MobileRoomTabs
+          roomId={roomId}
+          ws={ws}
+          onUploadComplete={refreshPlaybackUrl}
+          volume={volume}
+          setVolume={onSetVolume}
+        />
       </div>
 
       <PlayerControls
@@ -291,12 +319,16 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
         progress={progress}
         currentTime={currentTime}
         duration={duration}
+        isShuffle={isShuffle}
+        isRepeat={isRepeat}
         onTogglePlay={onTogglePlay}
         onSeek={onSeek}
         onSkipBack={onSkipBack}
         onSkipForward={onSkipForward}
         onToggleMute={onToggleMute}
         onSetVolume={onSetVolume}
+        onToggleShuffle={onToggleShuffle}
+        onToggleRepeat={onToggleRepeat}
       />
     </div>
   );

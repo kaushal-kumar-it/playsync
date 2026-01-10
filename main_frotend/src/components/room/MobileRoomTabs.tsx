@@ -7,11 +7,7 @@ import { auth } from '@/lib/firebase';
 import axios from 'axios';
 import { QRModal } from './QRModal';
 
-interface MobileRoomTabsProps {
-  roomId: string;
-  ws: WebSocket | null;
-  onUploadComplete?: () => void;
-}
+
 
 type TabType = 'session' | 'music' | 'chat';
 
@@ -31,10 +27,17 @@ interface ConnectedUser {
   isAdmin: boolean;
 }
 
-export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsProps) {
+export interface MobileRoomTabsProps {
+  roomId: string;
+  ws: WebSocket | null;
+  onUploadComplete?: () => void;
+  volume: number;
+  setVolume: (v: number) => void;
+}
+
+export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume }: MobileRoomTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('session');
   const [activePermission, setActivePermission] = useState<'everyone' | 'admins'>('admins');
-  const [volume, setVolume] = useState(100);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [message, setMessage] = useState('');
@@ -43,6 +46,19 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsP
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const seenClientIdsRef = useRef<Set<string>>(new Set());
+  const volumeBarRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+
+  // Permission logic
+  const currentUser = auth.currentUser;
+  const isAdmin = connectedUsers.find(u => u.userId === currentUser?.uid)?.isAdmin;
+  const canControlPlayback = activePermission === 'everyone' || isAdmin;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -128,31 +144,24 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsP
   }, [ws]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canControlPlayback) return;
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith('audio/')) return;
-
     if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') return;
-
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) return;
-
     setIsUploading(true);
     setUploadProgress(0);
-
     try {
       const user = auth.currentUser;
       if (!user) return;
-
       const token = await user.getIdToken();
-
       const { data } = await axios.post(
         `http://localhost:4000/rooms/${roomId}/generate-upload`,
         { filename: file.name },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       await axios.put(data.uploadUrl, file, {
         headers: { 'Content-Type': file.type },
         onUploadProgress: (progressEvent) => {
@@ -162,13 +171,10 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsP
           setUploadProgress(progress);
         },
       });
-
       if (ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'trackUpdated' }));
       }
-
       onUploadComplete?.();
-
       setUploadProgress(0);
     } catch (error) {
       console.error('Upload failed:', error);
@@ -228,6 +234,67 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsP
 
     setMessage('');
   };
+
+  // Mobile browsers require user interaction to unlock AudioContext
+  const unlockAudio = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+    setAudioUnlocked(true);
+  };
+
+  // Setup Web Audio API chain on first user interaction
+  useEffect(() => {
+    if (!audioUnlocked) return;
+    const audioEl = audioElementRef.current;
+    if (!audioEl) return;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    const ctx = audioContextRef.current;
+    if (!gainNodeRef.current) {
+      gainNodeRef.current = ctx.createGain();
+    }
+    if (!sourceNodeRef.current) {
+      sourceNodeRef.current = ctx.createMediaElementSource(audioEl);
+      sourceNodeRef.current.connect(gainNodeRef.current);
+      gainNodeRef.current.connect(ctx.destination);
+    }
+    gainNodeRef.current.gain.value = volume / 100;
+  }, [audioUnlocked, volume]);
+
+  // Drag-to-set volume (touch/mouse/pointer)
+  useEffect(() => {
+    const onPointerMove = (e: PointerEvent) => {
+      if (!draggingRef.current || !volumeBarRef.current) return;
+      const rect = volumeBarRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percent = Math.round((x / rect.width) * 100);
+      setVolume(Math.max(0, Math.min(100, percent)));
+    };
+    const onPointerUp = () => {
+      draggingRef.current = false;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('pointerleave', onPointerUp);
+    };
+    if (draggingRef.current) {
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+      window.addEventListener('pointerleave', onPointerUp);
+    }
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('pointerleave', onPointerUp);
+    };
+  }, [draggingRef.current]);
 
   return (
     <div className="lg:hidden flex flex-col h-full bg-dark-900">
@@ -333,22 +400,24 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsP
 
                     <div className="relative grid grid-cols-2 gap-1">
                       <motion.button
-                        onClick={() => setActivePermission('everyone')}
+                        onClick={() => isAdmin && setActivePermission('everyone')}
                         className={`relative z-10 flex items-center justify-center space-x-2 py-3 text-sm rounded-lg transition-colors ${
                           activePermission === 'everyone' ? 'text-black font-semibold' : 'text-zinc-400'
-                        }`}
+                        } ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
                         whileTap={{ scale: 0.98 }}
+                        disabled={!isAdmin}
                       >
                         <Users className="w-4 h-4" />
                         <span>Everyone</span>
                       </motion.button>
 
                       <motion.button
-                        onClick={() => setActivePermission('admins')}
+                        onClick={() => isAdmin && setActivePermission('admins')}
                         className={`relative z-10 flex items-center justify-center space-x-2 py-3 text-sm rounded-lg transition-colors ${
                           activePermission === 'admins' ? 'text-black font-semibold' : 'text-zinc-400'
-                        }`}
+                        } ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
                         whileTap={{ scale: 0.98 }}
+                        disabled={!isAdmin}
                       >
                         <Crown className="w-4 h-4" />
                         <span>Admins</span>
@@ -368,12 +437,27 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsP
                   <div className="flex items-center space-x-3">
                     <Volume2 className="w-5 h-5 text-zinc-400 flex-shrink-0" />
                     <div
+                      ref={volumeBarRef}
                       className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden cursor-pointer"
-                      onClick={(e) => {
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        unlockAudio(); // Unlock AudioContext on first interaction (required for mobile)
                         const rect = e.currentTarget.getBoundingClientRect();
                         const x = e.clientX - rect.left;
-                        const percentage = Math.round((x / rect.width) * 100);
-                        setVolume(Math.max(0, Math.min(100, percentage)));
+                        const percent = Math.round((x / rect.width) * 100);
+                        setVolume(Math.max(0, Math.min(100, percent)));
+                        draggingRef.current = true;
+                      }}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        unlockAudio(); // Unlock AudioContext on first interaction (required for mobile)
+                        if (!volumeBarRef.current) return;
+                        const rect = volumeBarRef.current.getBoundingClientRect();
+                        const touch = e.touches[0];
+                        const x = touch.clientX - rect.left;
+                        const percent = Math.round((x / rect.width) * 100);
+                        setVolume(Math.max(0, Math.min(100, percent)));
+                        draggingRef.current = true;
                       }}
                     >
                       <motion.div
@@ -479,7 +563,7 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete }: MobileRoomTabsP
                     accept="audio/mp3,audio/mpeg,.mp3"
                     className="hidden"
                     onChange={handleFileUpload}
-                    disabled={isUploading}
+                    disabled={isUploading || !canControlPlayback}
                   />
                 </motion.label>
 

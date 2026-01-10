@@ -28,12 +28,16 @@ export function PlayerControls({
   progress,
   currentTime,
   duration,
+  isShuffle,
+  isRepeat,
   onTogglePlay,
   onSeek,
   onSkipBack,
   onSkipForward,
   onToggleMute,
   onSetVolume,
+  onToggleShuffle,
+  onToggleRepeat,
 }: {
   hasTrack: boolean;
   trackName: string | null;
@@ -42,12 +46,16 @@ export function PlayerControls({
   progress: number;
   currentTime: number;
   duration: number;
+  isShuffle: boolean;
+  isRepeat: boolean;
   onTogglePlay: () => void;
   onSeek: (percentage: number) => void;
   onSkipBack: () => void;
   onSkipForward: () => void;
   onToggleMute: () => void;
   onSetVolume: (percentage: number) => void;
+  onToggleShuffle: () => void;
+  onToggleRepeat: () => void;
 }) {
   const percentFromClientX = (clientX: number, rect: DOMRect) => {
     if (rect.width <= 0) return 0;
@@ -55,13 +63,38 @@ export function PlayerControls({
     return Math.min(100, Math.max(0, (x / rect.width) * 100));
   };
 
+  // Drag-to-set volume (touch/mouse)
+  const volumeBarRef = React.useRef<HTMLDivElement>(null);
+  const draggingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!draggingRef.current) return;
+    const onPointerMove = (e: PointerEvent) => {
+      if (!volumeBarRef.current) return;
+      const rect = volumeBarRef.current.getBoundingClientRect();
+      onSetVolume(percentFromClientX(e.clientX, rect));
+    };
+    const onPointerUp = () => {
+      draggingRef.current = false;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, [onSetVolume]);
+
   return (
     <motion.footer
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.25 }}
-      className="h-20 sm:h-22 glass-dark border-t border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-8 relative z-30"
+      className="h-24 sm:h-22 glass-dark border-t border-white/5 flex items-center justify-between px-3 sm:px-6 lg:px-8 relative z-30"
     >
+      {/* Desktop: Track Info */}
       <div className="hidden sm:flex w-1/4 items-center space-x-4">
         <div className="min-w-0">
           <div className="text-zinc-300 text-sm font-medium truncate">
@@ -73,19 +106,25 @@ export function PlayerControls({
         </div>
       </div>
 
+      {/* Center: Playback Controls */}
       <div className="flex-1 flex flex-col items-center max-w-2xl">
-        <div className="sm:hidden w-full text-center mb-2 px-2">
+        {/* Mobile: Track Info */}
+        <div className="sm:hidden w-full text-center mb-3 px-2">
           <div className="text-zinc-300 text-xs font-medium truncate">
             {trackName || (hasTrack ? 'Track' : 'No track')}
           </div>
-          <div className="text-zinc-500 text-xs font-mono tabular-nums">
+          <div className="text-zinc-500 text-xs font-mono tabular-nums mt-0.5">
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
 
-        <div className="flex items-center space-x-3 sm:space-x-6 mb-2 sm:mb-3">
+        {/* Playback Buttons */}
+        <div className="flex items-center space-x-3 sm:space-x-6 mb-3">
           <motion.button
-            className="hidden sm:block text-zinc-500 hover:text-zinc-100 transition-colors"
+            className={`hidden sm:block transition-colors ${
+              isShuffle ? 'text-accent-gold' : 'text-zinc-500 hover:text-zinc-100'
+            }`}
+            onClick={onToggleShuffle}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -128,20 +167,26 @@ export function PlayerControls({
           </motion.button>
 
           <motion.button
-            className="hidden sm:block text-accent-green hover:text-accent-green-light transition-colors relative"
+            className={`hidden sm:block transition-colors relative ${
+              isRepeat ? 'text-accent-green' : 'text-zinc-500 hover:text-zinc-100'
+            }`}
+            onClick={onToggleRepeat}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
             <Repeat className="w-4 h-4 sm:w-5 sm:h-5" />
-            <motion.div
-              className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent-green"
-              animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+            {isRepeat && (
+              <motion.div
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent-green"
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            )}
           </motion.button>
         </div>
 
-        <div className="w-full flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
+        {/* Playback Timeline - Both Mobile and Desktop */}
+        <div className="w-full flex items-center space-x-2 sm:space-x-3 group cursor-pointer px-2 sm:px-0">
           <div
             className="flex-1 h-2 sm:h-1.5 bg-white/5 rounded-full overflow-hidden group-hover:h-2.5 sm:group-hover:h-2 transition-all"
             onPointerDown={(e) => {
@@ -150,20 +195,20 @@ export function PlayerControls({
               onSeek(percentFromClientX(e.clientX, rect));
             }}
           >
-            <motion.div
+            <div
               className="h-full bg-gradient-to-r from-accent-gold to-accent-green rounded-full relative"
               style={{ width: `${progress}%` }}
-              whileHover={{ boxShadow: '0 0 20px rgba(251, 191, 36, 0.5)' }}
             >
-              <motion.div
-                className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                whileHover={{ scale: 1.2 }}
+              <div
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-accent-gold shadow-lg z-10"
+                style={{ boxShadow: '0 0 8px 2px rgba(251,191,36,0.18), 0 2px 8px rgba(0,0,0,0.12)' }}
               />
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Desktop: Volume Control */}
       <div className="hidden sm:flex w-1/4 items-center justify-end space-x-3">
         <div className="flex items-center space-x-3 w-36 group">
           <motion.button
@@ -180,10 +225,12 @@ export function PlayerControls({
           </motion.button>
 
           <div
+            ref={volumeBarRef}
             className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden cursor-pointer group-hover:h-2 transition-all"
             onPointerDown={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               onSetVolume(percentFromClientX(e.clientX, rect));
+              draggingRef.current = true;
             }}
           >
             <motion.div
