@@ -52,9 +52,45 @@ Open http://localhost:3000 and sign in with your Firebase account.
 
 ---
 
+
 ## Deployment
 
 Both backend and frontend can be containerized with Docker. See each folder's `Dockerfile` for details. Environment variables are required for Firebase, database, and storage configuration.
+
+### Running with Docker
+
+You can run both the backend and frontend using Docker for easy deployment and local development. Make sure you have your environment files (`.env` for backend, `.env.local` for frontend) ready in each respective folder.
+
+#### 1. Build Docker Images
+
+From the project root, build both images:
+
+```bash
+# Build backend image
+docker build -t playsync-backend ./main_backend
+
+# Build frontend image
+docker build -t playsync-frontend ./main_frotend
+```
+
+#### 2. Run Containers
+
+You can run each container separately, making sure to map ports and mount environment files as needed:
+
+```bash
+# Run backend (default: port 4000)
+docker run --env-file ./main_backend/.env -p 4000:4000 playsync-backend
+
+# Run frontend (default: port 3000)
+docker run --env-file ./main_frotend/.env.local -p 3000:3000 playsync-frontend
+```
+
+#### 3. Access the App
+
+- Backend API: http://localhost:4000
+- Frontend: http://localhost:3000
+
+You can now use PlaySync in your browser and connect to the backend API.
 
 ---
 
