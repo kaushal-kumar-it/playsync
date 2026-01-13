@@ -54,7 +54,8 @@ export default function DashboardPage() {
   const fetchRooms = async (currentUser: any) => {
     try {
       const token = await currentUser.getIdToken();
-      const response = await axios.get("http://localhost:4000/rooms/my-rooms", {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+      const response = await axios.get(`${apiBase}/rooms/my-rooms`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRooms(response.data.rooms);
@@ -69,8 +70,9 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const token = await user.getIdToken();
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
       const response = await axios.post(
-        "http://localhost:4000/rooms/create",
+        `${apiBase}/rooms/create`,
         {},
         {
           headers: {

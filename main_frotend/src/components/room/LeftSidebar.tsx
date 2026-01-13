@@ -78,8 +78,9 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
       if (!user) return;
 
       const token = await user.getIdToken();
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
       const { data } = await axios.post(
-        `http://localhost:4000/rooms/${roomId}/generate-upload`,
+        `${apiBase}/rooms/${roomId}/generate-upload`,
         { filename: file.name },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -55,7 +55,8 @@ export default function LoginPage() {
         const token = await result.user.getIdToken();
         console.log("Got token, sending to backend...");
         
-        await axios.get("http://localhost:4000/me", {
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+        await axios.get(`${apiBase}/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         

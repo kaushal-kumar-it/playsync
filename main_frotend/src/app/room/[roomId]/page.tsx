@@ -78,8 +78,9 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
     if (!authUser) return;
     try {
       const token = await authUser.getIdToken();
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
       const { data } = await axios.get(
-        `http://localhost:4000/rooms/${roomId}/playback-url`,
+        `${apiBase}/rooms/${roomId}/playback-url`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const nextUrl = typeof data?.playbackUrl === 'string' ? data.playbackUrl : null;
