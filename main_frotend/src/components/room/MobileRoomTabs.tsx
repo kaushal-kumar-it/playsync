@@ -44,6 +44,7 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const seenClientIdsRef = useRef<Set<string>>(new Set());
   const volumeBarRef = useRef<HTMLDivElement>(null);
@@ -147,6 +148,7 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
     if (!canControlPlayback) return;
     const file = e.target.files?.[0];
     if (!file) return;
+    setSelectedFile(file);
     if (!file.type.startsWith('audio/')) return;
     if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') return;
     const maxSize = 10 * 1024 * 1024;
@@ -557,6 +559,13 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
                     <div className="text-xs text-zinc-500">
                       {isUploading ? 'Please wait...' : 'Add music to queue'}
                     </div>
+                    {isUploading && selectedFile && (
+                      <div className="text-xs text-zinc-400 mt-1 truncate max-w-[180px]">
+                        {selectedFile.name.length > 0
+                          ? `${selectedFile.name.slice(0, 24)}${selectedFile.name.length > 24 ? '...' : ''}`
+                          : ''}
+                      </div>
+                    )}
                   </div>
                   <input
                     id="audio-upload-mobile"
