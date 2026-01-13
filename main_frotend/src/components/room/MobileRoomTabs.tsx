@@ -149,12 +149,12 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
     const file = e.target.files?.[0];
     if (!file) return;
     setSelectedFile(file);
-    if (!file.type.startsWith('audio/')) return;
-    if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') return;
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) return;
-    setIsUploading(true);
-    setUploadProgress(0);
+    if (!file.type.startsWith('audio/')) return; 
+    if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') return; 
+    const maxSize = 10 * 1024 * 1024; 
+    if (file.size > maxSize) return; 
+    setIsUploading(true); 
+    setUploadProgress(0); 
     try {
       const user = auth.currentUser;
       if (!user) return;
@@ -559,7 +559,7 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
                     <div className="text-xs text-zinc-500">
                       {isUploading ? 'Please wait...' : 'Add music to queue'}
                     </div>
-                    {isUploading && selectedFile && (
+                    {selectedFile && (
                       <div className="text-xs text-zinc-400 mt-1 truncate max-w-[180px]">
                         {selectedFile.name.length > 0
                           ? `${selectedFile.name.slice(0, 24)}${selectedFile.name.length > 24 ? '...' : ''}`
@@ -597,7 +597,7 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
                       No tracks yet
                     </h3>
                     <p className="text-zinc-600 text-xs">
-                      Upload your first track to get started
+                      setSelectedFile(null); // Clear selected file after upload
                     </p>
                   </div>
                 </div>
