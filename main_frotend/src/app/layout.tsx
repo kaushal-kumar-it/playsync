@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Beatsync | Your music rooms",
+  title: "Playsync | Your music rooms",
   description: "Collaborative, real-time music rooms with perfect sync.",
   icons: {
     icon: "/logo.png",
