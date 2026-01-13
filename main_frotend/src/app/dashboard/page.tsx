@@ -260,7 +260,7 @@ export default function DashboardPage() {
                   <h3 className="text-lg sm:text-xl font-bold text-zinc-100 mb-2">
                     Join Room
                   </h3>
-                  <div className="relative">
+                  <div className="relative flex gap-2">
                     <input
                       type="text"
                       placeholder="Enter room code..."
@@ -271,8 +271,16 @@ export default function DashboardPage() {
                           joinRoom(joinCode);
                         }
                       }}
-                      className="w-full bg-zinc-900/50 border border-white/5 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700 transition-all"
+                      className="flex-1 bg-zinc-900/50 border border-white/5 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700 transition-all"
                     />
+                    <button
+                      type="button"
+                      disabled={!joinCode.trim()}
+                      onClick={() => joinCode.trim() && joinRoom(joinCode)}
+                      className="px-3 py-2 rounded-lg bg-amber-500 text-black font-semibold text-xs sm:text-sm shadow hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-400 transition-all"
+                    >
+                      Join
+                    </button>
                   </div>
                 </div>
               </div>
