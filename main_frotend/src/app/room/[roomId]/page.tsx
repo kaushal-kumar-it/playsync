@@ -125,9 +125,9 @@ export default function RoomPage({ params }: { params: Promise<{ roomId: string 
       connectingRef.current = true;
 
       const token = await authUser.getIdToken();
-      const websocket = new WebSocket(
-        `ws://localhost:4000?roomId=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`
-      );
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+      const wsUrl = apiBase.replace(/^http(s?):\/\//, "wss://") + `?roomId=${encodeURIComponent(roomId)}&token=${encodeURIComponent(token)}`;
+      const websocket = new WebSocket(wsUrl);
       wsRef.current = websocket;
 
       websocket.onopen = () => {
