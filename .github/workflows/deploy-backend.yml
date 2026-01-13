@@ -22,7 +22,17 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
+            # Load nvm (FIX for node not found)
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+            # Verify node & pm2
+            node -v
+            pm2 -v
+
+            # Deploy
             cd ${{ secrets.VM_PROJECT_PATH }}
-            git pull origin HEAD
+            git pull origin main
+
             pm2 restart all
             pm2 save
