@@ -1,5 +1,8 @@
 import * as os from "oci-objectstorage";
-import * as common from "oci-common";
+import {
+  InstancePrincipalsAuthenticationDetailsProvider,
+  Region
+} from "oci-common";
 import dotenv from "dotenv";
 
 dotenv.config();
