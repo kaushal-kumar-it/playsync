@@ -18,14 +18,25 @@ if (!namespace || !bucket) {
   throw new Error("Missing OCI_NAMESPACE or OCI_BUCKET_NAME");
 }
 
-const provider = InstancePrincipalsAuthenticationDetailsProviderBuilder.builder().build();
+let objectStorageClient;
+let clientInitialized = false;
 
-const objectStorageClient = new os.ObjectStorageClient({
-  authenticationDetailsProvider: provider,
-});
-objectStorageClient.region = Region.fromRegionId(region);
+async function initClient() {
+  if (clientInitialized) return;
+  
+  const provider = await new InstancePrincipalsAuthenticationDetailsProviderBuilder().build();
+  
+  objectStorageClient = new os.ObjectStorageClient({
+    authenticationDetailsProvider: provider,
+  });
+  objectStorageClient.region = Region.fromRegionId(region);
+  
+  clientInitialized = true;
+}
 
 export async function generateUploadUrl(filename) {
+  await initClient();
+  
   const objectName = `${Date.now()}_${filename}`;
 
   const request = {
@@ -49,6 +60,8 @@ export async function generateUploadUrl(filename) {
 }
 
 export async function generateReadUrl(objectKey) {
+  await initClient();
+  
   const request = {
     namespaceName: namespace,
     bucketName: bucket,
@@ -70,6 +83,8 @@ export async function generateReadUrl(objectKey) {
 }
 
 export async function deleteFromOCI(objectKey) {
+  await initClient();
+  
   await objectStorageClient.deleteObject({
     namespaceName: namespace,
     bucketName: bucket,
