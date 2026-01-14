@@ -560,10 +560,14 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
                       {isUploading ? 'Please wait...' : 'Add music to queue'}
                     </div>
                     {selectedFile && (
-                      <div className="text-xs text-zinc-400 mt-1 max-w-[140px] overflow-hidden text-ellipsis whitespace-nowrap block">
-                        {selectedFile.name}
-                      </div>
-                    )}
+                              <div className="mt-3 p-3 rounded-lg bg-white/5 border border-white/10">
+                              <p className="text-xs text-zinc-400 truncate max-w-[200px]">
+                    {selectedFile.name.length > 30 
+                      ? `${selectedFile.name.slice(0, 27)}...` 
+                      : selectedFile.name}
+                                </p>
+                    </div>
+              )}
                   </div>
                   <input
                     id="audio-upload-mobile"
