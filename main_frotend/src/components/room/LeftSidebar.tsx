@@ -68,6 +68,12 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
     if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') return;
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) return;
+    let shortName = file.name;
+    const extMatch = /\.[^\.]+$/.exec(file.name);
+    const ext = extMatch ? extMatch[0] : '';
+    const base = ext ? file.name.slice(0, -ext.length) : file.name;
+    if (base.length > 14) shortName = base.slice(0, 14) + '...' + ext;
+    const shortFile = new File([file], shortName, { type: file.type });
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -79,11 +85,11 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
       const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
       const { data } = await axios.post(
         `${apiBase}/rooms/${roomId}/generate-upload`,
-        { filename: file.name },
+        { filename: shortFile.name },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      await axios.put(data.uploadUrl, file, {
-        headers: { 'Content-Type': file.type },
+      await axios.put(data.uploadUrl, shortFile, {
+        headers: { 'Content-Type': shortFile.type },
         onUploadProgress: (progressEvent) => {
           const progress = progressEvent.total
             ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
