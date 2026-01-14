@@ -26,6 +26,7 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (!ws) return;
@@ -62,14 +63,11 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+    setSelectedFile(file);
     if (!file.type.startsWith('audio/')) return;
-
     if (file.type !== 'audio/mpeg' && file.type !== 'audio/mp3') return;
-
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) return;
-
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -258,6 +256,18 @@ export function LeftSidebar({ roomId, ws, onUploadComplete }: LeftSidebarProps) 
             <div className="text-[11px] text-zinc-500">
               {isUploading ? 'Please wait...' : 'Add music to room'}
             </div>
+            {selectedFile && (
+              <div className="text-[11px] text-zinc-400 mt-1">
+                {(() => {
+                  const name = selectedFile.name;
+                  const ext = name.endsWith('.mp3') ? '.mp3' : '';
+                  const base = ext ? name.slice(0, -4) : name;
+                  return base.length > 14
+                    ? `${base.slice(0, 14)}...${ext}`
+                    : name;
+                })()}
+              </div>
+            )}
           </div>
           <input
             id="audio-upload"

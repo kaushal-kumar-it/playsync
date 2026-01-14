@@ -562,8 +562,8 @@ export function MobileRoomTabs({ roomId, ws, onUploadComplete, volume, setVolume
                     {selectedFile && (
                               <div className="mt-3 p-3 rounded-lg bg-white/5 border border-white/10">
                               <p className="text-xs text-zinc-400 truncate max-w-[200px]">
-                    {selectedFile.name.length > 30 
-                      ? `${selectedFile.name.slice(0, 27)}...` 
+                    {selectedFile.name.length >15 
+                      ? `${selectedFile.name.slice(0, 13)}...` 
                       : selectedFile.name}
                                 </p>
                     </div>
