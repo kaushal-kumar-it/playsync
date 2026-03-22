@@ -144,7 +144,7 @@ export default function DashboardPage() {
                 <Crown className="w-5 h-5 sm:w-7 sm:h-7 text-amber-400" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold">Beatsync</h1>
+                <h1 className="text-lg sm:text-2xl font-bold">Playsync</h1>
                 <p className="text-xs sm:text-sm text-zinc-600">
                   Your music rooms
                 </p>
