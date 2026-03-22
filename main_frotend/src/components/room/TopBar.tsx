@@ -32,7 +32,7 @@ export function TopBar({ roomId, offset = 0, rtt = 0 }: { roomId: string, offset
             </motion.div>
           </div>
           <span className="text-zinc-100 font-bold text-sm sm:text-lg tracking-tight">
-            Beatsync
+            Playsync
           </span>
         </motion.div>
         <div className="flex items-center space-x-2 sm:space-x-4 lg:space-x-6 text-xs font-medium">
